@@ -54,6 +54,112 @@ namespace slimCat.Utilities
 
         #endregion
 
+        /// <summary>
+        ///     Endpoints for the F-list API 2.0
+        /// </summary>
+        public static class ApiConstants
+        {
+            public const string Host = "";
+
+            /// <summary>
+            ///     The API root.
+            /// </summary>
+            public const string Api = Host + @"/api/2";
+
+            /// <summary>
+            ///     The authenticate endpoint.
+            /// </summary>
+            public const string Authenticate = Api + "/auth";
+
+            /// <summary>
+            ///     The report endpoint.
+            /// </summary>
+            public const string Report = Api + "/chat/report";
+
+            /// <summary>
+            ///     The bookmark list enpoint.
+            /// </summary>
+            public const string ListBookmark = Api + "/bookmark_friend/list";
+
+            /// <summary>
+            ///     The add bookmark endpoint.
+            /// </summary>
+            public const string AddBookmark = Api + "/bookmark/add";
+
+            /// <summary>
+            ///     The remove bookmark endpoint.
+            /// </summary>
+            public const string RemoveBookmark = Api + "/bookmark/remove";
+
+            /// <summary>
+            ///     The add friend endpoint.
+            /// </summary>
+            public const string AddFriend = Api + "/friend/add";
+
+            /// <summary>
+            ///     The remove friend endpoint.
+            /// </summary>
+            public const string RemoveFriend = Api + "/friend/remove";
+
+            /// <summary>
+            ///     The cancel friend request endpoint.
+            /// </summary>
+            public const string CancelFriendRequest = Api + "/friend/request/cancel";
+
+            /// <summary>
+            ///     The accept friend request endpoint.
+            /// </summary>
+            public const string AcceptFriendRequest = Api + "/friend/request/accept";
+
+            /// <summary>
+            ///     The list character data endpoint.
+            /// </summary>
+            public const string ListCharacterData = Api + "/character/data";
+
+            /// <summary>
+            ///     The list account characters endpoint.
+            /// </summary>
+            public const string ListAccountCharacters = Api + "/character/list";
+
+            /// <summary>
+            ///     The get character memo endpoint.
+            /// </summary>
+            public const string GetCharacterMemo = Api + "/character/memo/get";
+
+            /// <summary>
+            ///     The set character memo endpoint.
+            /// </summary>
+            public const string SetCharacterMemo = Api + "/character/memo/set";
+
+            /// <summary>
+            ///     The list ignores endpoint.
+            /// </summary>
+            public const string ListIgnores = Api + "/ignore/list";
+
+            /// <summary>
+            ///     The add ignore endpoint.
+            /// </summary>
+            public const string AddIgnore = Api + "/ignore/add";
+
+            /// <summary>
+            ///     The remove ignore endpoint.
+            /// </summary>
+            public const string RemoveIgnore = Api + "/ignore/remove";
+
+            /// <summary>
+            ///     The list site kinks endpoint.
+            /// </summary>
+            public const string ListSiteKinks = Api + "/kink/list";
+
+            /// <summary>
+            ///     The search chat characters endpoint.
+            /// </summary>
+            public const string SearchChatCharacters = Api + "/search/site";
+        }
+
+        /// <summary>
+        ///     Arguments used in F-chat commands
+        /// </summary>
         public static class Arguments
         {
             public const string MultipleChannels = "channels";
