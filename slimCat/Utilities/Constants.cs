@@ -161,8 +161,8 @@ namespace slimCat.Utilities
             /// <summary>
             ///     The search chat characters endpoint.
             /// </summary>
-            [Obsolete]
-            public const string SearchChatCharacters = Api + "/search/char";
+            [Obsolete("Not implemented yet", true)]
+            public const string SearchChatCharacters = Api + "/search/chat";
         }
 
         /// <summary>
@@ -403,16 +403,6 @@ namespace slimCat.Utilities
             public const string Domain = @"https://www.f-list.net";
 
             /// <summary>
-            ///     The url for the ticket get script.
-            /// </summary>
-            public const string GetTicket = Domain + @"/json/getApiTicket.php";
-
-            /// <summary>
-            ///     The url for the login script.
-            /// </summary>
-            public const string Login = Domain + @"/action/script_login.php";
-
-            /// <summary>
             ///     The url for the get log script.
             /// </summary>
             public const string ReadLog = Domain + @"/fchat/getLog.php?log=";
@@ -422,10 +412,25 @@ namespace slimCat.Utilities
             /// </summary>
             public const string ViewNote = Domain + @"/view_note.php?note_id=";
 
+            #region Obsolete
+            /// <summary>
+            ///     The url for the ticket get script.
+            /// </summary>
+            [Obsolete("Old API. Move to new.", true)]
+            public const string GetTicket = Domain + @"/json/getApiTicket.php";
+
+            /// <summary>
+            ///     The url for the login script.
+            /// </summary>
+            [Obsolete("Old API. Move to new.", true)]
+            public const string Login = Domain + @"/action/script_login.php";
+
             /// <summary>
             ///     The url for the upload log script.
             /// </summary>
+            [Obsolete("Old API. Move to new.", true)]
             public const string UploadLog = Domain + @"/fchat/submitLog.php";
+            #endregion
         }
     }
 }
