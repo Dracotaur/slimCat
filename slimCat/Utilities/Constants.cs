@@ -19,6 +19,8 @@
 
 namespace slimCat.Utilities
 {
+    using System;
+
     /// <summary>
     ///     The constants used by slimCat.
     /// </summary>
@@ -152,9 +154,15 @@ namespace slimCat.Utilities
             public const string ListSiteKinks = Api + "/kink/list";
 
             /// <summary>
+            ///     The search site characters endpoint.
+            /// </summary>
+            public const string SearchSiteCharacters = Api + "/search/site"; 
+            
+            /// <summary>
             ///     The search chat characters endpoint.
             /// </summary>
-            public const string SearchChatCharacters = Api + "/search/site";
+            [Obsolete]
+            public const string SearchChatCharacters = Api + "/search/char";
         }
 
         /// <summary>
