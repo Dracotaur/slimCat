@@ -53,7 +53,7 @@ namespace slimCat.Services
 
                 totalRequest.Append(arg.Key);
                 totalRequest.Append('=');
-                totalRequest.Append(HttpUtility.UrlEncode((string) arg.Value));
+                totalRequest.Append(HttpUtility.UrlEncode(arg.Value.ToString()));
             }
 
             var toPost = Encoding.ASCII.GetBytes(totalRequest.ToString());

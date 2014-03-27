@@ -46,7 +46,7 @@ namespace slimCat.Utilities
         /// <summary>
         ///     The endpoint for F-chat websocket communication.
         /// </summary>
-        public const string ServerHost = "wss://chat.f-list.net:9799/";
+        public const string ServerHost = "wss://chat.f-list.net:8799/";
 
         #endregion
 
@@ -61,12 +61,12 @@ namespace slimCat.Utilities
         /// </summary>
         public static class ApiConstants
         {
-            public const string Host = "";
+            public const string Host = "http://www.f-list.net:6881";
 
             /// <summary>
             ///     The API root.
             /// </summary>
-            public const string Api = Host + @"/api/2";
+            public const string Api = Host + @"/api/v2";
 
             /// <summary>
             ///     The authenticate endpoint.
@@ -422,13 +422,12 @@ namespace slimCat.Utilities
             /// <summary>
             ///     The url for the login script.
             /// </summary>
-            [Obsolete("Old API. Move to new.", true)]
             public const string Login = Domain + @"/action/script_login.php";
 
             /// <summary>
             ///     The url for the upload log script.
             /// </summary>
-            [Obsolete("Old API. Move to new.", true)]
+            [Obsolete("Old API. Move to new.", false)]
             public const string UploadLog = Domain + @"/fchat/submitLog.php";
             #endregion
         }

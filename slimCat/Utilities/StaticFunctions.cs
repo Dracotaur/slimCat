@@ -30,6 +30,7 @@ namespace slimCat.Utilities
     using System.Windows;
     using System.Windows.Media;
     using Models;
+    using Newtonsoft.Json;
 
     #endregion
 
@@ -491,6 +492,22 @@ namespace slimCat.Utilities
             }
 
             return default(T);
+        }
+
+
+
+        /// <summary>
+        ///     Deserializes the object.
+        /// </summary>
+        /// <typeparam name="T">
+        ///     The type of object to deserialize to.
+        /// </typeparam>
+        /// <param name="objectString">
+        ///     The object string.
+        /// </param>
+        public static T DeserializeTo<T>(this string objectString)
+        {
+            return JsonConvert.DeserializeObject<T>(objectString);
         }
 
         #endregion

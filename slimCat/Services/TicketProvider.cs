@@ -25,7 +25,8 @@ namespace slimCat.Services
     using System.Collections.Generic;
     using System.Linq;
     using Models;
-    using SimpleJson;
+    using Models.Api;
+    using Newtonsoft.Json;
     using Utilities;
 
     #endregion
@@ -42,7 +43,7 @@ namespace slimCat.Services
         private Dictionary<string, object> loginCredentials;
         private bool shouldGetNewTicket;
 
-        private const string siteIsDisabled = "The site has been disabled for maintenance, check back later.";
+        private const string SiteIsDisabled = "The site has been disabled for maintenance, check back later.";
 
         public TicketProvider(IBrowser browser)
         {
@@ -84,6 +85,9 @@ namespace slimCat.Services
                 {
                     {"account", user.ToLower()},
                     {"password", pass},
+                    {"characters", true},
+                    {"friends", true},
+                    {"bookmarks", true}
                 };
 
             lastAccount = lastAccount ?? new AccountModel();
@@ -98,41 +102,26 @@ namespace slimCat.Services
             if (lastAccount == null || lastAccount.Password == null)
                 throw new InvalidOperationException("Set login credentials before logging in!");
 
-            var buffer = browser.GetResponse(Constants.UrlConstants.GetTicket, loginCredentials);
+            var buffer = browser.GetResponse(Constants.ApiConstants.Authenticate, loginCredentials);
 
-            if (buffer.Equals(siteIsDisabled, StringComparison.OrdinalIgnoreCase))
+            if (buffer.Equals(SiteIsDisabled, StringComparison.OrdinalIgnoreCase))
                 throw new Exception("Site API disabled for maitenence.");
 
             // assign the data to our account model
-            dynamic result = SimpleJson.DeserializeObject(buffer);
 
-            var hasError = !string.IsNullOrWhiteSpace((string) result.error);
+            var result = buffer.DeserializeTo<ApiAuthResponse>();
 
-            lastTicket = (string) result.ticket;
+            var hasError = !string.IsNullOrWhiteSpace(result.Error);
+
+            lastTicket = result.Ticket;
 
             if (hasError)
-                throw new Exception(result.error);
+                throw new Exception(result.Error);
 
-            foreach (var item in result.characters)
-                lastAccount.Characters.Add((string) item);
+            foreach (var item in result.Characters)
+                lastAccount.Characters.Add(item.Name);
 
-            foreach (var item in result.friends)
-            {
-                if (lastAccount.AllFriends.ContainsKey(item["source_name"]))
-                    lastAccount.AllFriends[item["source_name"]].Add((string) item["dest_name"]);
-                else
-                {
-                    var list = new List<string> {(string) item["dest_name"]};
-
-                    lastAccount.AllFriends.Add(item["source_name"], list);
-                }
-            }
-
-            foreach (var item in result.bookmarks)
-            {
-                if (!lastAccount.Bookmarks.Contains(item["name"] as string))
-                    lastAccount.Bookmarks.Add(item["name"] as string);
-            }
+            // todo: Friends/bookmarks
 
             lastInfoRetrieval = DateTime.Now;
             ShouldGetNewTicket = false;
@@ -143,4 +132,6 @@ namespace slimCat.Services
             browser.GetResponse(Constants.UrlConstants.Login, loginCredentials, true);
         }
     }
+
+
 }
