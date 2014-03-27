@@ -52,12 +52,15 @@ namespace slimCat.Services
         private readonly Random random = new Random();
         private readonly Queue<KeyValuePair<string, object>> resendQueue = new Queue<KeyValuePair<string, object>>();
         private readonly Timer staggerTimer;
+        private readonly Timer timeoutTimer;
 
         private bool isAuthenticated;
         private StreamWriter logger;
 
         private int retryAttemptCount;
         private WebSocket socket;
+
+        private const int TimeoutTimeMs = 30*1000; // 30 seconds
 
         #endregion
 
@@ -100,10 +103,23 @@ namespace slimCat.Services
             InitializeLog();
 
             autoPingTimer.Elapsed += (s, e) => TrySend(Constants.ClientCommands.SystemPing);
-            autoPingTimer.Start();
 
             staggerTimer = new Timer(GetNextConnectDelay()); // first reconnect is 5 seconds
             staggerTimer.Elapsed += (s, e) => DoReconnect();
+
+            timeoutTimer = new Timer(TimeoutTimeMs); // 30 seconds
+            timeoutTimer.Elapsed += (s, e) => OnTimeout();
+        }
+
+        private void OnTimeout()
+        {
+            if (socket.State != WebSocketState.Connecting) return;
+
+            socket = new WebSocket(Constants.ServerHost);
+
+            DoReconnect();
+
+            timeoutTimer.Stop();
         }
 
         #endregion
@@ -172,11 +188,12 @@ namespace slimCat.Services
 
         private void ConnectToChat(string character)
         {
-            Character = character.ThrowIfNull("character");
+            if (character == null) return;
+            Character = character;
 
             events.GetEvent<CharacterSelectedLoginEvent>().Unsubscribe(ConnectToChat);
 
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.Connecting) return;
+            if (socket.State == WebSocketState.Open) return;
 
             socket = new WebSocket(Constants.ServerHost);
 
@@ -222,6 +239,7 @@ namespace slimCat.Services
 
             events.GetEvent<ConnectionClosedEvent>().Publish(string.Empty);
             AttemptReconnect();
+            autoPingTimer.Stop();
         }
 
         /// <summary>
@@ -233,8 +251,12 @@ namespace slimCat.Services
             {
                 isAuthenticated = true;
                 events.GetEvent<LoginAuthenticatedEvent>().Publish(null);
+
                 SendQueue();
                 retryAttemptCount = 0;
+
+                timeoutTimer.Stop();
+                autoPingTimer.Start();
             }
 
             var commandType = e.Message.Substring(0, 3); // type of command sent
@@ -319,6 +341,10 @@ namespace slimCat.Services
 
             events.GetEvent<ReconnectingEvent>().Publish((int) staggerTimer.Interval/1000);
             events.SendUserCommand("join", new[] {"home"});
+            autoPingTimer.Stop();
+
+            timeoutTimer.Interval = staggerTimer.Interval + (TimeoutTimeMs);
+            timeoutTimer.Start();
         }
 
         private void DoReconnect()

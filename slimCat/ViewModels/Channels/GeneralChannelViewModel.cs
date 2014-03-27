@@ -46,19 +46,31 @@ namespace slimCat.ViewModels
     /// </summary>
     public class GeneralChannelViewModel : ChannelViewModelBase
     {
+        #region Constants
+
+        private const int MaxAutoPosts = 6;
+
+        #endregion
+
         #region Fields
 
         private readonly GenderSettingsModel genderSettings;
+
         private readonly FilteredMessageCollection messageManager;
 
         private readonly GenericSearchSettingsModel searchSettings;
+
         private readonly IList<string> thisDingTerms = new List<string>();
 
-        private Timer adFlood = new Timer(602000);
+        private Timer adFloodTimer = new Timer(602000);
 
         private string adMessage = string.Empty;
 
         private bool autoPostAds;
+
+        private int autoPostCount;
+
+        private DateTimeOffset autoTimeLeft;
 
         private bool hasNewAds;
 
@@ -72,7 +84,7 @@ namespace slimCat.ViewModels
 
         private bool isSearching;
 
-        private Timer messageFlood = new Timer(500);
+        private Timer messageFloodTimer = new Timer(500);
 
         private RelayCommand @switch;
 
@@ -80,7 +92,7 @@ namespace slimCat.ViewModels
 
         private DateTimeOffset timeLeftAd;
 
-        private Timer update = new Timer(1000);
+        private Timer updateTimer = new Timer(1000);
 
         #endregion
 
@@ -126,38 +138,43 @@ namespace slimCat.ViewModels
 
                 SearchSettings.Updated += (s, e) => OnPropertyChanged("SearchSettings");
 
-                messageFlood.Elapsed += (s, e) =>
+                messageFloodTimer.Elapsed += (s, e) =>
                     {
                         isInCoolDownMessage = false;
-                        messageFlood.Enabled = false;
+                        messageFloodTimer.Enabled = false;
                         OnPropertyChanged("CanPost");
                     };
 
-                adFlood.Elapsed += (s, e) =>
+                adFloodTimer.Elapsed += (s, e) =>
                     {
                         isInCoolDownAd = false;
-                        adFlood.Enabled = false;
+                        adFloodTimer.Enabled = false;
                         OnPropertyChanged("CanPost");
                         OnPropertyChanged("CannotPost");
                         OnPropertyChanged("ShouldShowAutoPost");
                         if (autoPostAds)
                             SendAutoAd();
+                        else
+                            autoPostCount = 0;
                     };
 
-                update.Elapsed += (s, e) =>
+                updateTimer.Elapsed += (s, e) =>
                     {
                         if (!Model.IsSelected)
                             return;
 
                         if (CannotPost)
+                        {
                             OnPropertyChanged("TimeLeft");
+                            OnPropertyChanged("AutoTimeLeft");
+                        }
 
                         OnPropertyChanged("StatusString");
                     };
 
                 ChannelManagementViewModel.PropertyChanged += (s, e) => OnPropertyChanged("ChannelManagementViewModel");
 
-                update.Enabled = true;
+                updateTimer.Enabled = true;
 
                 var newSettings = SettingsService.GetChannelSettings(
                     cm.CurrentCharacter.Name, Model.Title, Model.Id, Model.Type);
@@ -196,7 +213,14 @@ namespace slimCat.ViewModels
             set
             {
                 autoPostAds = value;
+
+                // set the interval time to however many minutes in miliseconds
+                // plus two seconds in miliseconds
+                if (!isInCoolDownAd)
+                    adFloodTimer.Interval = Model.Settings.AutopostTime*60*1000 + 2000;
+
                 OnPropertyChanged("AutoPost");
+                OnPropertyChanged("CanShowAutoTimeLeft");
             }
         }
 
@@ -207,6 +231,11 @@ namespace slimCat.ViewModels
                 return (IsDisplayingChat && !isInCoolDownMessage)
                        || (IsDisplayingAds && !isInCoolDownAd);
             }
+        }
+
+        public bool CanShowAutoTimeLeft
+        {
+            get { return IsDisplayingAds && CannotPost && AutoPost; }
         }
 
         public bool CanSwitch
@@ -384,7 +413,7 @@ namespace slimCat.ViewModels
             get
             {
                 if (IsDisplayingAds && AutoPost && isInCoolDownAd)
-                    return "Auto post Ads enabled";
+                    return "Auto posting:";
 
                 if (!string.IsNullOrEmpty(Message))
                 {
@@ -393,10 +422,10 @@ namespace slimCat.ViewModels
                 }
 
                 if (OtherTabHasMessages && IsDisplayingChat)
-                    return "This channel has new ad(s).";
+                    return "There are new ad(s).";
 
                 if (OtherTabHasMessages && IsDisplayingAds)
-                    return "This channel has new message(s).";
+                    return "There are new message(s).";
 
                 return string.Empty;
             }
@@ -425,7 +454,12 @@ namespace slimCat.ViewModels
         /// </summary>
         public string TimeLeft
         {
-            get { return HelperConverter.DateTimeInFutureToRough(timeLeftAd) + "left"; }
+            get { return HelperConverter.DateTimeInFutureToRough(timeLeftAd) + "until next"; }
+        }
+
+        public string AutoTimeLeft
+        {
+            get { return HelperConverter.DateTimeInFutureToRough(autoTimeLeft) + "until disabled"; }
         }
 
         #endregion
@@ -467,15 +501,39 @@ namespace slimCat.ViewModels
         {
             var messageToSend = IsDisplayingChat ? adMessage : Message;
             if (messageToSend == null)
+            {
                 UpdateError("There is no ad to auto-post!");
+                AutoPost = false;
+                isInCoolDownAd = false;
+                return;
+            }
 
-            Events.SendUserCommand(CommandDefinitions.ClientSendChannelAd, new[] {messageToSend}, Model.Id);
-            timeLeftAd = DateTimeOffset.Now.AddMinutes(10).AddSeconds(2);
+            var last = Model.Ads.Last();
+            if (last != null)
+            {
+                if (!last.Poster.NameEquals(ChatModel.CurrentCharacter.Name))
+                    Events.SendUserCommand(CommandDefinitions.ClientSendChannelAd, new[] {messageToSend}, Model.Id);
+            }
+            else
+                Events.SendUserCommand(CommandDefinitions.ClientSendChannelAd, new[] {messageToSend}, Model.Id);
+
+            adFloodTimer.Interval = Model.Settings.AutopostTime*60*1000 + 2000;
+            timeLeftAd = DateTimeOffset.Now.AddMilliseconds(adFloodTimer.Interval);
 
             isInCoolDownAd = true;
-            adFlood.Start();
+            adFloodTimer.Start();
+
             OnPropertyChanged("CanPost");
             OnPropertyChanged("CannotPost");
+
+            autoPostCount++;
+
+            if (autoPostCount < MaxAutoPosts) return;
+
+            autoTimeLeft = DateTime.Now.AddMilliseconds(adFloodTimer.Interval*(MaxAutoPosts - autoPostCount));
+            AutoPost = false;
+            OnPropertyChanged("CanShowAutoTimeLeft");
+            autoPostCount = 0;
         }
 
         #endregion
@@ -513,14 +571,14 @@ namespace slimCat.ViewModels
         {
             if (isManaged)
             {
-                update.Dispose();
-                update = null;
+                updateTimer.Dispose();
+                updateTimer = null;
 
-                adFlood.Dispose();
-                adFlood = null;
+                adFloodTimer.Dispose();
+                adFloodTimer = null;
 
-                messageFlood.Dispose();
-                messageFlood = null;
+                messageFloodTimer.Dispose();
+                messageFloodTimer = null;
 
                 Events.GetEvent<NewUpdateEvent>().Unsubscribe(UpdateChat);
                 Model.Messages.CollectionChanged -= OnMessagesChanged;
@@ -599,18 +657,20 @@ namespace slimCat.ViewModels
                 isInCoolDownMessage = true;
                 OnPropertyChanged("CanPost");
 
-                messageFlood.Enabled = true;
+                messageFloodTimer.Enabled = true;
             }
             else
             {
-                timeLeftAd = DateTime.Now.AddMinutes(10).AddSeconds(2);
+                timeLeftAd = DateTime.Now.AddMilliseconds(adFloodTimer.Interval);
+                autoTimeLeft = DateTime.Now.AddMilliseconds(adFloodTimer.Interval*MaxAutoPosts);
 
                 isInCoolDownAd = true;
                 OnPropertyChanged("CanPost");
                 OnPropertyChanged("CannotPost");
                 OnPropertyChanged("ShouldShowAutoPost");
+                OnPropertyChanged("CanShowAutoTimeLeft");
 
-                adFlood.Enabled = true;
+                adFloodTimer.Start();
             }
         }
 

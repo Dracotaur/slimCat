@@ -8,10 +8,10 @@
         xmlns:vm="clr-namespace:slimCat.ViewModels"
         xmlns:v="clr-namespace:slimCat.Views"
 
-        Title="slimCat Client Notifications"
+        Title="{Binding Path=Title}"
         WindowStyle="None"
         ShowInTaskbar="False"
-        Width="300"
+        Width="350"
         SizeToContent="Height"
         Topmost="true"
         AllowsTransparency="True"
@@ -23,26 +23,41 @@
         <Button Command="{Binding SnapToLatestCommand}"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Left"
-                Background="{StaticResource BackgroundBrush}">
+                Background="{StaticResource BackgroundBrush}"
+                Padding="0">
             <StackPanel Margin="5">
-                <DockPanel HorizontalAlignment="Stretch"
-                           Width="275">
-                    <v:CloseButtonView Command="{Binding HideCommand}"
-                                       Margin="0,5,5,0"
-                                       HorizontalAlignment="Right"
-                                       DockPanel.Dock="Right" />
-                    <TextBlock Text="slimCat Notification"
-                               FontSize="16"
-                               Foreground="{StaticResource HighlightBrush}" />
-                </DockPanel>
-                <TextBlock TextWrapping="Wrap"
+                <Border BorderThickness="0,0,0,1"
+                        Margin="0,0,0,2"
+                        BorderBrush="{StaticResource HighlightBrush}">
+                    <DockPanel HorizontalAlignment="Stretch" Width="350">
+                        <v:CloseButtonView Command="{Binding HideCommand}"
+                                           Margin="0,0,15,0"
+                                           HorizontalAlignment="Right"
+                                           DockPanel.Dock="Right" />
+                        <TextBlock Text="{Binding Path=Title}"
+                                   FontSize="16"
+                                   Foreground="{StaticResource HighlightBrush}" />
+                    </DockPanel>
+                </Border>
+
+                <DockPanel Margin="0,2,0,0">
+                    <Border DockPanel.Dock="Left"
+                            Margin="0,2,5,0"
+                            Visibility="{Binding Path=ShouldShowAvatar, Converter={StaticResource BoolConverter}}">
+                        <Image Source="{Binding Path=TargetCharacter.Avatar}"
+                                       Height="75"
+                                       Width="75" />
+                    </Border>
+
+                    <TextBlock TextWrapping="Wrap"
                            Foreground="{StaticResource ForegroundBrush}">
                     <lib:TextBlockHelper.InlineList>
                         <Binding Path="Content"
                                  Mode="OneWay"
                                  Converter="{StaticResource BbCodeConverter}" />
                     </lib:TextBlockHelper.InlineList>
-                </TextBlock>
+                    </TextBlock>
+                </DockPanel>
             </StackPanel>
         </Button>
 

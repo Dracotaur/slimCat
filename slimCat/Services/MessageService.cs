@@ -25,6 +25,7 @@ namespace slimCat.Services
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Web;
     using System.Windows;
     using System.Windows.Threading;
     using Microsoft.Practices.Prism.Events;
@@ -246,6 +247,7 @@ namespace slimCat.Services
 
         public void JoinChannel(ChannelType type, string id, string name = "")
         {
+            name = HttpUtility.HtmlDecode(name);
             IEnumerable<string> history = new List<string>();
             if (!id.Equals("Home"))
                 history = logger.GetLogs(string.IsNullOrWhiteSpace(name) ? id : name, id);
@@ -674,7 +676,8 @@ namespace slimCat.Services
                             Tab = channelText
                         };
 
-                    logId = api.UploadLog(report, channel.Messages);
+                    
+                    logId = api.UploadLog(report, channel.Messages.Union(channel.Ads));
                 }
             }
 
@@ -704,10 +707,10 @@ namespace slimCat.Services
             var character = command.Get(Constants.Arguments.Character).ToLower().Trim();
             var add = command.Get(Constants.Arguments.Type) == "tempinteresting";
 
-            if (add)
-                characterManager.Add(character, ListKind.Interested, true);
-            else
-                characterManager.Add(character, ListKind.NotInterested, true);
+            characterManager.Add(
+                character,
+                add ? ListKind.Interested : ListKind.NotInterested,
+                true);
         }
 
         private void OnHandleLatestReportRequested(IDictionary<string, object> command)

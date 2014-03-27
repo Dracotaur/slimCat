@@ -33,6 +33,7 @@ namespace slimCat.Utilities
     using System.Windows.Documents;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
+    using System.Windows.Navigation;
     using Models;
     using Services;
 
@@ -494,9 +495,16 @@ namespace slimCat.Utilities
 
         private Inline MakeUser(ParsedChunk arg)
         {
-            var user = MakeUsernameLink(characterManager.Find(arg.Children.First().InnerText));
-            arg.Children.Clear();
-            return user;
+            if (arg.Children != null && arg.Children.Any())
+            {
+                var user = MakeUsernameLink(characterManager.Find(arg.Children.First().InnerText));
+                arg.Children.Clear();
+                return user;
+            }
+
+            return !string.IsNullOrEmpty(arg.Arguments) 
+                ? MakeUsernameLink(characterManager.Find(arg.Arguments)) 
+                : MakeNormalText(arg);
         }
 
         private Inline MakeSuperscript(ParsedChunk arg)
@@ -525,9 +533,16 @@ namespace slimCat.Utilities
 
         private Inline MakeChannel(ParsedChunk arg)
         {
-            var channel = MakeChannelLink(ChatModel.FindChannel(arg.Children.First().InnerText));
-            arg.Children.Clear();
-            return channel;
+            if (arg.Children != null && arg.Children.Any())
+            {
+                var channel = MakeChannelLink(ChatModel.FindChannel(arg.Children.First().InnerText));
+                arg.Children.Clear();
+                return channel;
+            }
+
+            return !string.IsNullOrEmpty(arg.Arguments)
+                ? MakeChannelLink(ChatModel.FindChannel(arg.Arguments))
+                : MakeNormalText(arg);
         }
 
         private Span MakeStrikeThrough(ParsedChunk arg)
@@ -573,6 +588,9 @@ namespace slimCat.Utilities
 
         private Inline MakeSession(ParsedChunk arg)
         {
+            if (arg.Children == null || !arg.Children.Any() || string.IsNullOrEmpty(arg.Arguments))
+                return MakeNormalText(arg);
+
             var channel = MakeChannelLink(ChatModel.FindChannel(arg.Children.First().InnerText, arg.Arguments));
             arg.Children.Clear();
             return channel;
@@ -955,16 +973,9 @@ namespace slimCat.Utilities
             }
             else
             {
-                var isSelf = message != null && ChatModel != null &&
-                             ChatModel.CurrentCharacter.NameEquals(message.Poster.Name);
-
                 inlines.Add(new Run(": "));
 
-                var toAdd = Parse(text);
-                if (isSelf)
-                    toAdd.Foreground = Locator.Find<Brush>("SelfBrush");
-
-                inlines.Add(toAdd);
+                inlines.Add(Parse(text));
             }
 
             return inlines;
@@ -1064,6 +1075,9 @@ namespace slimCat.Utilities
             if (manager != null && manager.IsOnList(character.Name, ListKind.NotInterested))
                 return (SolidColorBrush) Application.Current.FindResource("NotAvailableBrush");
 
+            if (!ApplicationSettings.AllowStatusDiscolor)
+                return (SolidColorBrush) TryGet(GetGenderName(character.Gender), true);
+
             if (character.Status == StatusType.Crown
                 || character.Status == StatusType.Online
                 || character.Status == StatusType.Looking)
@@ -1079,6 +1093,9 @@ namespace slimCat.Utilities
 
             if (manager != null && manager.IsOnList(character.Name, ListKind.NotInterested))
                 return (Color) Application.Current.FindResource("NotAvailableColor");
+
+            if (!ApplicationSettings.AllowStatusDiscolor)
+                return (Color) TryGet(GetGenderName(character.Gender), false);
 
             if (character.Status == StatusType.Crown
                 || character.Status == StatusType.Online
@@ -1351,12 +1368,8 @@ namespace slimCat.Utilities
                 return Application.Current.FindResource("ForegroundBrush");
 
             var message = (IMessage) value;
-            var interesting = message.Poster.IsInteresting;
 
-            if (message.IsOfInterest)
-                return TryGet("Background", true);
-
-            return interesting
+            return message.Poster.IsInteresting
                 ? TryGet("Contrast", true)
                 : GetBrush(message.Poster);
         }
@@ -1397,6 +1410,32 @@ namespace slimCat.Utilities
         }
     }
 
+    public sealed class MessageThicknessConverter : OneWayConverter
+    {
+        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            const int top = 0;
+            const int left = 0;
+
+            var bottom = 0;
+            var right = 0;
+
+            var message = value as IMessage;
+            if (message == null) return new Thickness(left, top, right, bottom);
+
+            if (message.Type == MessageType.Ad)
+                bottom = 1;
+
+            if (message.IsOfInterest)
+            {
+                right = 8;
+                bottom = 2;
+            }
+
+            return new Thickness(left, top, right, bottom);
+        }
+    }
+
     public sealed class CharacterStatusOpacityConverter : OneWayConverter
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -1405,6 +1444,36 @@ namespace slimCat.Utilities
                 return 1.0;
 
             return ((StatusType) value) == StatusType.Offline ? 0.4 : 1;
+        }
+    }
+
+    public sealed class ForegroundBrushConverter : OneWayConverter
+    {
+        private readonly IChatModel chatModel;
+        private readonly IThemeLocator locator;
+
+        public ForegroundBrushConverter(IChatModel chatModel, IThemeLocator locator)
+        {
+            this.chatModel = chatModel;
+            this.locator = locator;
+        }
+
+        public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            Brush defaultBrush;
+            if (locator != null) defaultBrush = locator.Find<Brush>("ForegroundBrush");
+            else defaultBrush = (Brush) Application.Current.FindResource("ForegroundBrush");
+
+            if (value == null || chatModel == null) return defaultBrush;
+
+            var message = value as IMessage; // this is the beef of the message
+
+            if (message == null) return defaultBrush;
+
+            if (chatModel.CurrentCharacter.NameEquals(message.Poster.Name) && locator != null)
+                return locator.Find<Brush>("SelfBrush");
+
+            return defaultBrush;
         }
     }
 

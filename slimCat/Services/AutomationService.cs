@@ -64,6 +64,10 @@ namespace slimCat.Services
 
             idleTimer.Interval = ApplicationSettings.AutoIdleTime*OneMinute;
             awayTimer.Interval = ApplicationSettings.AutoAwayTime*OneMinute;
+
+            if (ApplicationSettings.AllowAutoIdle) idleTimer.Start();
+            if (ApplicationSettings.AllowAutoAway) awayTimer.Start();
+            if (ApplicationSettings.AllowAutoBusy) fullscreenTimer.Start();
         }
 
         public bool IsDuplicateAd(string name, string message)
@@ -85,9 +89,9 @@ namespace slimCat.Services
 
         private void FullscreenTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-            if (!ApplicationSettings.AllowAutoBusy) return;
-
-            if (cm.CurrentCharacter == null) return;
+            if (cm.CurrentCharacter == null 
+                || !ApplicationSettings.AllowAutoBusy
+                || cm.CurrentCharacter.Status == StatusType.Busy) return;
 
             if (cm.CurrentCharacter.Status != StatusType.Online
                 && cm.CurrentCharacter.Status != StatusType.Idle
@@ -102,7 +106,7 @@ namespace slimCat.Services
 
         private void OnUserCommandSent(IDictionary<string, object> obj)
         {
-            if (obj.Get(Constants.Arguments.Type) == Constants.ClientCommands.UserStatus)
+            if (obj.ContainsKey(Constants.Arguments.Status))
                 return;
 
             if (cm.CurrentCharacter == null) return;
@@ -120,7 +124,9 @@ namespace slimCat.Services
 
         private void AwayTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-            if (cm.CurrentCharacter == null || cm.CurrentCharacter.Status == StatusType.Away) return;
+            if (cm.CurrentCharacter == null 
+                || cm.CurrentCharacter.Status == StatusType.Away
+                || !ApplicationSettings.AllowAutoAway) return;
 
             cm.CurrentCharacter.Status = StatusType.Away;
             events.SendUserCommand("away", new[] {cm.CurrentCharacter.StatusMessage});
@@ -130,7 +136,9 @@ namespace slimCat.Services
 
         private void IdleTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-            if (cm.CurrentCharacter.Status != StatusType.Online) return;
+            if (cm.CurrentCharacter == null 
+                || cm.CurrentCharacter.Status != StatusType.Online 
+                || !ApplicationSettings.AllowAutoIdle) return;
 
             cm.CurrentCharacter.Status = StatusType.Idle;
             events.SendUserCommand("idle", new[] {cm.CurrentCharacter.StatusMessage});

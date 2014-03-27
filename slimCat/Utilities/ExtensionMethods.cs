@@ -23,7 +23,6 @@ namespace slimCat.Utilities
 
     using System;
     using System.Collections.Generic;
-    using System.Collections.ObjectModel;
     using System.Linq;
     using System.Windows.Documents;
     using Microsoft.Practices.Prism.Events;
@@ -147,7 +146,7 @@ namespace slimCat.Utilities
         {
             if (maxCount > 0)
             {
-                while (collection.Count > maxCount)
+                while (collection.Count >= maxCount)
                 {
                     collection.RemoveAt(0);
                 }

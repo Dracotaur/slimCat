@@ -68,16 +68,6 @@ namespace slimCat.Services
 
         #region Constructors and Destructors
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="NotificationService" /> class.
-        /// </summary>
-        /// <param name="eventagg">
-        ///     The eventagg.
-        /// </param>
-        /// <param name="cm">
-        ///     The cm.
-        /// </param>
-        /// <param name="manager"></param>
         public NotificationService(IEventAggregator eventagg, IChatModel cm, ICharacterManager manager)
         {
             events = eventagg;
@@ -94,6 +84,8 @@ namespace slimCat.Services
                     {
                         Application.Current.MainWindow.Closing += (s, e) =>
                             {
+                                if (!ApplicationSettings.AllowMinimizeToTray) return;
+
                                 e.Cancel = true;
                                 HideWindow();
                             };
@@ -244,7 +236,12 @@ namespace slimCat.Services
                 if ((channel.Settings.MessageNotifyOnlyForInteresting && IsOfInterest(message.Poster.Name))
                     || !channel.Settings.MessageNotifyOnlyForInteresting)
                 {
-                    NotifyUser(shouldDing, shouldDing, message.Poster.Name + '\n' + cleanMessageText, channel.Id);
+                    NotifyUser(shouldDing, 
+                        shouldDing,
+                        "{0} #{1}".FormatWith(message.Poster.Name, channel.Title) + '\n' + cleanMessageText,
+                        channel.Id,
+                        null,
+                        message.Poster);
                     return; // and if we do, there is no need to evalutae further
                 }
             }
@@ -279,6 +276,7 @@ namespace slimCat.Services
                 }
             }
 
+            if (ApplicationSettings.CheckForOwnName) 
             {
                 // Now our character's name is always added
                 var name = cm.CurrentCharacter.Name.ToLower();
@@ -305,7 +303,7 @@ namespace slimCat.Services
                     var notifyMessage = string.Format(
                         "{0} mentioned {1}:\n{2}", message.Poster.Name, match.Item1, match.Item2);
 
-                    NotifyUser(true, true, notifyMessage, channel.Id);
+                    NotifyUser(true, true, notifyMessage, channel.Id, null, message.Poster);
                     channel.FlashTab();
                 }
                 message.IsOfInterest = true;
@@ -348,12 +346,14 @@ namespace slimCat.Services
             {
                 case ChannelSettingsModel.NotifyLevel.NotificationAndToast:
                     NotifyUser(
-                        false, false, poster.Name + '\n' + HttpUtility.HtmlDecode(message.Message), poster.Name);
+                        false, false, poster.Name + '\n' + HttpUtility.HtmlDecode(message.Message), poster.Name, null,
+                        message.Poster);
                     return;
 
                 case ChannelSettingsModel.NotifyLevel.NotificationAndSound:
                     NotifyUser(
-                        true, true, poster.Name + '\n' + HttpUtility.HtmlDecode(message.Message), poster.Name);
+                        true, true, poster.Name + '\n' + HttpUtility.HtmlDecode(message.Message), poster.Name, null,
+                        message.Poster);
                     return;
 
                 default:
@@ -421,27 +421,27 @@ namespace slimCat.Services
                         ? ((CharacterUpdateModel.NoteEventArgs) args).Link
                         : ((CharacterUpdateModel.CommentEventArgs) args).Link;
 
-                    NotifyUser(false, false, notification.ToString(), link);
+                    NotifyUser(false, false, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), link, null, model.TargetCharacter);
                 }
                 else if (args is CharacterUpdateModel.ListChangedEventArgs)
                 {
                     AddNotification(model);
-                    NotifyUser(false, false, notification.ToString(), targetCharacter);
+                    NotifyUser(false, false, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), targetCharacter, null, model.TargetCharacter);
                 }
                 else if (args is CharacterUpdateModel.ReportHandledEventArgs)
                 {
                     AddNotification(model);
-                    NotifyUser(true, true, notification.ToString(), targetCharacter);
+                    NotifyUser(true, true, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), targetCharacter, null, model.TargetCharacter);
                 }
                 else if (args is CharacterUpdateModel.ReportFiledEventArgs)
                 {
                     AddNotification(model);
-                    NotifyUser(true, true, notification.ToString(), targetCharacter, "report");
+                    NotifyUser(true, true, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), targetCharacter, "report", model.TargetCharacter);
                 }
                 else if (args is CharacterUpdateModel.BroadcastEventArgs)
                 {
                     AddNotification(model);
-                    NotifyUser(true, true, notification.ToString(), targetCharacter);
+                    NotifyUser(true, true, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), targetCharacter, null, model.TargetCharacter);
                 }
                 else if (IsOfInterest(targetCharacter, false) && !model.TargetCharacter.IgnoreUpdates)
                 {
@@ -454,7 +454,7 @@ namespace slimCat.Services
                             return; // don't make a toast if we have their tab focused as it is redundant
                     }
 
-                    NotifyUser(false, false, notification.ToString(), targetCharacter);
+                    NotifyUser(false, false, "{0}\n {1}".FormatWith(targetCharacter, notification.ToString()), targetCharacter, null, model.TargetCharacter);
                 }
             }
             else
@@ -464,7 +464,7 @@ namespace slimCat.Services
                 if (!channelUpdate.TargetChannel.Settings.AlertAboutUpdates) return;
 
                 AddNotification(notification);
-                NotifyUser(false, false, notification.ToString(), channelUpdate.TargetChannel.Id);
+                NotifyUser(false, false, "{0}\n{0} {1}".FormatWith(channelUpdate.TargetChannel.Title, notification.ToString()), channelUpdate.TargetChannel.Id);
             }
         }
 
@@ -493,10 +493,14 @@ namespace slimCat.Services
             bool flashWindow = false,
             string message = null,
             string target = null,
-            string kind = null)
+            string kind = null,
+            ICharacter character = null)
         {
             Action notify = () =>
                 {
+                    if (character != null)
+                        character.GetAvatar();
+
                     if (flashWindow)
                         FlashWindow();
 
@@ -508,6 +512,7 @@ namespace slimCat.Services
 
                     toast.Target = target;
                     toast.Kind = kind;
+                    toast.TargetCharacter = character;
                 };
 
             Dispatcher.Invoke(notify);

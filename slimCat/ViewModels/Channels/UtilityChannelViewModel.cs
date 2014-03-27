@@ -216,6 +216,16 @@ namespace slimCat.ViewModels
             }
         }
 
+        public bool AllowMinimizeToSystemTray
+        {
+            get { return ApplicationSettings.AllowMinimizeToTray; }
+            set
+            {
+                ApplicationSettings.AllowMinimizeToTray = value;
+                Save();
+            }
+        }
+
         #endregion
 
         #region Appearance
@@ -241,6 +251,16 @@ namespace slimCat.ViewModels
             set
             {
                 ApplicationSettings.AllowColors = value;
+                Save();
+            }
+        }
+        public bool AllowStatusDiscolor
+        {
+            get { return ApplicationSettings.AllowStatusDiscolor; }
+
+            set
+            {
+                ApplicationSettings.AllowStatusDiscolor = value;
                 Save();
             }
         }
@@ -373,6 +393,15 @@ namespace slimCat.ViewModels
             }
         }
 
+        public bool CheckOwnName
+        {
+            get { return ApplicationSettings.CheckForOwnName; }
+            set
+            {
+                ApplicationSettings.CheckForOwnName = value;
+                SettingsService.SaveApplicationSettingsToXml(ChatModel.CurrentCharacter.Name);
+            }
+        }
 
         public bool ShowNotifications
         {
@@ -423,9 +452,15 @@ namespace slimCat.ViewModels
             {
                 if (ChatModel.IsAuthenticated) return string.Empty;
 
+                if (inStagger && DelayTime == 0)
+                {
+                    inStagger = false;
+                    ConnectTime = 0;
+                }
+
                 return flavorText + connectDotDot.ToString()
-                       + (!inStagger ? "\nRequest sent " + ConnectTime + " seconds ago" : string.Empty)
-                       + (DelayTime > 0 ? "\nWaiting " + --DelayTime + " seconds until reconnecting" : string.Empty);
+                       + (!inStagger ? "\nRequest sent " + ConnectTime + " second(s) ago" : string.Empty)
+                       + (DelayTime > 0 ? "\nWaiting " + --DelayTime + " second(s) until reconnecting" : string.Empty);
             }
         }
 

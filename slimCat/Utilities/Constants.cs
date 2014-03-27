@@ -41,7 +41,7 @@ namespace slimCat.Utilities
         /// <summary>
         ///     The client's version.
         /// </summary>
-        public const string ClientVer = "rc3.10";
+        public const string ClientVer = "rc3.13";
 
         /// <summary>
         ///     The endpoint for F-chat websocket communication.

@@ -179,6 +179,13 @@
                                               ToolTip="Allows slimCat to store any kind of log file.">
                                         Allow Logging
                                     </CheckBox>
+                                    
+                                    <CheckBox IsChecked="{Binding AllowMinimizeToSystemTray}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,15,0,0"
+                                              ToolTip="Allows slimCat to minimize itself to system tray on closing the window, instead of exiting.">
+                                        Allow Minimize to System Tray
+                                    </CheckBox>
 
                                     <CheckBox IsChecked="{Binding FriendsAreAccountWide}"
                                               VerticalAlignment="Center"
@@ -223,6 +230,13 @@
                                               Margin="0,15,0,0"
                                               ToolTip="Allows slimCat to display small windows on the bottom-right of your screen alerting you of events and updates">
                                         Allow Toast Notifications
+                                    </CheckBox>
+                                    
+                                    <CheckBox IsChecked="{Binding CheckOwnName}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,15,0,0"
+                                              ToolTip="Determines whether or not slimCat will automatically notify you when someone mentions your character's name">
+                                        Allow Current Name Highlighting
                                     </CheckBox>
 
                                     <CheckBox IsChecked="{Binding AllowSoundWhenTabIsFocused}"
@@ -292,7 +306,14 @@
                                                   DisplayMemberPath="Key"
                                                   SelectedValuePath="Value" />
                                     </StackPanel>
-
+                                    
+                                    <CheckBox IsChecked="{Binding AllowStatusDiscolor}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,15,0,0"
+                                              ToolTip="Allows slimCat to discolor users who have a status of busy, idle, away, or do not disturb.">
+                                        Allow Status Discoloring
+                                    </CheckBox>
+                                    
                                     <Line Stretch="Fill" Stroke="{StaticResource HighlightBrush}" X2="1"
                                           Margin="0,15,0,0" />
 
@@ -315,7 +336,7 @@
                                               VerticalAlignment="Center"
                                               Margin="0,15,0,0"
                                               ToolTip="Allows slimCat to automatically reset your status from 'away' or 'idle' to 'online' when you perform actions">
-                                        Allow Status Auto Rest
+                                        Allow Status Auto Reset
                                     </CheckBox>
 
                                     <CheckBox IsChecked="{Binding AllowAutoBusy}"

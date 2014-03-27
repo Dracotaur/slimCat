@@ -225,8 +225,10 @@ namespace slimCat.Utilities
 
             if (!title.Equals(id))
             {
-                var safeTitle = Path.GetInvalidPathChars()
-                    .Union(new List<char> {':'})
+                var safeTitle = 
+                    Path.GetInvalidPathChars()
+                    .Union(Path.GetInvalidFileNameChars())
+                    .Except(new [] {'/', '\\'})
                     .Aggregate(title,
                         (current, c) => current.Replace(c.ToString(CultureInfo.InvariantCulture), string.Empty));
 
