@@ -75,8 +75,14 @@ namespace slimCat.Services
             {
                 IsLogIn = false
             };
+			//--Temporary
+			var chatCharacter = ChatModel.CurrentPms.FirstByIdOrNull(characterName);
+			if (chatCharacter?.TargetCharacter != null)
+			{
+				chatCharacter.TargetCharacter.Status = StatusType.Offline;
+			}
 
-            Events.NewCharacterUpdate(character, updateArgs);
+			Events.NewCharacterUpdate(character, updateArgs);
         }
     }
 }

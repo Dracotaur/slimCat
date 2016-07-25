@@ -14,8 +14,9 @@
     <utilities:OppositeBoolConverter x:Key="OppositeBoolConverter" />
     <utilities:HiddenBoolConverter x:Key="HiddenBoolConverter" />
     <utilities:BoolColorConverter x:Key="ColorConverter" />
-    <utilities:GenderImageConverter x:Key="GenderImageConverter" />
-    <utilities:ChannelTypeToImageConverter x:Key="ChannelTypeToImageConverter" />
+	<utilities:GenderImageConverter x:Key="GenderImageConverter" />
+	<utilities:UserStatusColorConverter x:Key="UserStatusColorConverter" />
+	<utilities:ChannelTypeToImageConverter x:Key="ChannelTypeToImageConverter" />
     <utilities:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
     <utilities:MessageInterestedColorConverter x:Key="MessageInterestedColorConverter" />
     <utilities:MessageDelimiterColorConverter x:Key="DelimiterColorConverter" />
@@ -386,8 +387,8 @@
                                 </Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <Border BorderThickness="0,0,0,1"
-                                BorderBrush="{StaticResource HighlightBrush}">
+                        <Border BorderThickness="0,0,0,3"
+                                BorderBrush="{Binding Path=Status, Mode=OneWay, Converter={StaticResource UserStatusColorConverter}}">
                             <Image Source="{Binding Path=Avatar}"
                                    Height="75"
                                    Width="75" />

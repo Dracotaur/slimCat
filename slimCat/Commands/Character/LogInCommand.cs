@@ -73,8 +73,14 @@ namespace slimCat.Services
             };
 
             CharacterManager.SignOn(temp);
+			//--Temporary
+			var chatCharacter = ChatModel.CurrentPms.FirstByIdOrNull(temp.Name);
+			if (chatCharacter?.TargetCharacter != null)
+			{
+				chatCharacter.TargetCharacter.Status = temp.Status;
+			}
 
-            Events.NewUpdate(new CharacterUpdateModel(temp, new LoginStateChangedEventArgs {IsLogIn = true}));
+			Events.NewUpdate(new CharacterUpdateModel(temp, new LoginStateChangedEventArgs {IsLogIn = true}));
         }
     }
 }

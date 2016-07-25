@@ -102,9 +102,15 @@ namespace slimCat.Services
             {
                 statusChanged = true;
                 character.Status = status;
-            }
+			}
+			//--Temporary
+			var chatCharacter = ChatModel.CurrentPms.FirstByIdOrNull(target);
+			if (chatCharacter?.TargetCharacter != null)
+			{
+				chatCharacter.TargetCharacter.Status = status;
+			}
 
-            if (character.StatusMessage != statusMessage)
+			if (character.StatusMessage != statusMessage)
             {
                 statusMessageChanged = true;
                 character.StatusMessage = statusMessage;

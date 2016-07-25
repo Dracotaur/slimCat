@@ -21,8 +21,8 @@
             <ColumnDefinition MaxWidth="135" />
         </Grid.ColumnDefinitions>
         <Border Grid.RowSpan="2"
-                BorderBrush="{StaticResource BrightBackgroundBrush}"
-                BorderThickness="1">
+                BorderBrush="{Binding Path=TargetCharacter.Status, Mode=OneWay, Converter={StaticResource UserStatusColorConverter}}"
+                BorderThickness="2">
             <Grid>
                 <Image Source="{Binding Path=TargetCharacter.Avatar}" />
 
